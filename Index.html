@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>NeeDoh Stock Hunter</title>
+<link href="https://fonts.googleapis.com/css2?family=Boogaloo&family=Nunito:wght@400;600;700;900&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --pink: #FF6B9D;
+    --yellow: #FFE03D;
+    --purple: #9B5DE5;
+    --mint: #00E5A0;
+    --coral: #FF4E6A;
+    --bg: #1A0B2E;
+    --card: #261446;
+    --card2: #1E0F3A;
+    --text: #F0E6FF;
+    --muted: #9B89C4;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: 'Nunito', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+  .blobs { position: fixed; inset: 0; pointer-events: none; z-index: 0; overflow: hidden; }
+  .blob { position: absolute; border-radius: 50%; filter: blur(80px); opacity: 0.18; animation: blobFloat 8s ease-in-out infinite alternate; }
+  .blob1 { width: 400px; height: 400px; background: var(--pink); top: -100px; left: -100px; animation-delay: 0s; }
+  .blob2 { width: 350px; height: 350px; background: var(--purple); top: 40%; right: -80px; animation-delay: 2s; }
+  .blob3 { width: 300px; height: 300px; background: var(--mint); bottom: -50px; left: 30%; animation-delay: 4s; }
+  @keyframes blobFloat { from { transform: translate(0,0) scale(1); } to { transform: translate(30px, 40px) scale(1.1); } }
+  .container { position: relative; z-index: 1; max-width: 800px; margin: 0 auto; padding: 2rem 1.5rem 4rem; }
+  header { text-align: center; margin-bottom: 2.5rem; }
+  .squishy-logo { display: inline-block; font-family: 'Boogaloo', cursive; font-size: 3.2rem; line-height: 1; background: linear-gradient(135deg, var(--pink), var(--yellow), var(--mint)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; animation: squish 3s ease-in-out infinite; transform-origin: center bottom; filter: drop-shadow(0 0 20px rgba(255,107,157,0.4)); }
+  @keyframes squish { 0%, 100% { transform: scaleY(1) scaleX(1); } 30% { transform: scaleY(0.88) scaleX(1.08); } 60% { transform: scaleY(1.06) scaleX(0.95); } }
+  .subtitle { margin-top: 0.5rem; color: var(--muted); font-size: 0.95rem; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; }
+  .badge { display: inline-block; margin-top: 0.6rem; background: linear-gradient(90deg, var(--coral), var(--pink)); color: white; font-size: 0.72rem; font-weight: 700; padding: 0.25rem 0.8rem; border-radius: 99px; letter-spacing: 0.05em; text-transform: uppercase; animation: pulse 2s infinite; }
+  @keyframes pulse { 0%,100% { opacity:1; } 50% { opacity:0.7; } }
+  .search-card { background: var(--card); border: 1px solid rgba(255,255,255,0.07); border-radius: 20px; padding: 1.8rem; margin-bottom: 1.5rem; box-shadow: 0 8px 40px rgba(0,0,0,0.4); }
+  .form-label { font-size: 0.82rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); margin-bottom: 0.5rem; display: block; }
+  .form-row { display: flex; gap: 0.75rem; margin-bottom: 1rem; flex-wrap: wrap; }
+  .form-group { flex: 1; min-width: 180px; }
+  input[type="text"], input[type="password"], select { width: 100%; background: var(--card2); border: 2px solid rgba(255,255,255,0.08); border-radius: 12px; color: var(--text); font-family: 'Nunito', sans-serif; font-size: 1rem; font-weight: 600; padding: 0.75rem 1rem; outline: none; transition: border-color 0.2s; }
+  input[type="text"]:focus, input[type="password"]:focus, select:focus { border-color: var(--pink); }
+  select option { background: var(--card2); }
+  .input-hint { font-size: 0.75rem; color: var(--muted); margin-top: 0.3rem; }
+  .checklist { display: flex; flex-wrap: wrap; gap: 0.5rem; margin-bottom: 1rem; }
+  .chip { background: var(--card2); border: 2px solid rgba(255,255,255,0.08); border-radius: 99px; padding: 0.35rem 0.9rem; font-size: 0.82rem; font-weight: 700; cursor: pointer; transition: all 0.2s; user-select: none; color: var(--muted); }
+  .chip.active { background: linear-gradient(90deg, var(--pink), var(--purple)); border-color: transparent; color: white; }
+  .chip:hover { border-color: var(--pink); color: var(--text); }
+  .scan-btn { width: 100%; background: linear-gradient(135deg, var(--pink), var(--purple)); border: none; border-radius: 14px; color: white; cursor: pointer; font-family: 'Boogaloo', cursive; font-size: 1.5rem; letter-spacing: 0.04em; padding: 0.9rem 2rem; transition: transform 0.15s, box-shadow 0.15s; box-shadow: 0 4px 24px rgba(155,93,229,0.4); }
+  .scan-btn:hover:not(:disabled) { transform: translateY(-2px); box-shadow: 0 8px 32px rgba(155,93,229,0.5); }
+  .scan-btn:active:not(:disabled) { transform: scaleY(0.95) scaleX(1.02); }
+  .scan-btn:disabled { opacity: 0.6; cursor: not-allowed; }
+  .status-bar { background: var(--card); border: 1px solid rgba(255,255,255,0.07); border-radius: 14px; padding: 1rem 1.4rem; margin-bottom: 1.5rem; display: none; align-items: center; gap: 0.75rem; }
+  .status-bar.visible { display: flex; }
+  .spinner { width: 22px; height: 22px; border: 3px solid rgba(255,107,157,0.3); border-top-color: var(--pink); border-radius: 50%; animation: spin 0.8s linear infinite; flex-shrink: 0; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .status-text { font-size: 0.92rem; color: var(--muted); font-weight: 600; }
+  .status-text span { color: var(--pink); }
+  #results { display: none; }
+  #results.visible { display: block; }
+  .results-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; }
+  .results-title { font-family: 'Boogaloo', cursive; font-size: 1.6rem; background: linear-gradient(90deg, var(--mint), var(--yellow)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+  .count-badge { background: rgba(0,229,160,0.15); color: var(--mint); border: 1px solid rgba(0,229,160,0.3); border-radius: 99px; font-size: 0.8rem; font-weight: 700; padding: 0.25rem 0.75rem; }
+  .result-card { background: var(--card); border: 1px solid rgba(255,255,255,0.07); border-radius: 16px; padding: 1.2rem 1.4rem; margin-bottom: 0.85rem; display: flex; flex-direction: column; gap: 0.5rem; transition: border-color 0.2s, transform 0.2s; animation: slideIn 0.3s ease both; }
+  @keyframes slideIn { from { opacity:0; transform: translateY(12px); } to { opacity:1; transform: translateY(0); } }
+  .result-card:hover { border-color: rgba(255,107,157,0.3); transform: translateY(-2px); }
+  .result-top { display: flex; justify-content: space-between; align-items: flex-start; gap: 0.5rem; }
+  .result-retailer { font-weight: 900; font-size: 1.05rem; color: var(--text); }
+  .result-product { font-size: 0.88rem; color: var(--muted); font-weight: 600; }
+  .stock-pill { flex-shrink: 0; font-size: 0.75rem; font-weight: 700; padding: 0.25rem 0.7rem; border-radius: 99px; text-transform: uppercase; letter-spacing: 0.05em; }
+  .stock-pill.in-stock { background: rgba(0,229,160,0.15); color: var(--mint); border: 1px solid rgba(0,229,160,0.4); }
+  .stock-pill.low-stock { background: rgba(255,224,61,0.15); color: var(--yellow); border: 1px solid rgba(255,224,61,0.4); }
+  .stock-pill.out-of-stock { background: rgba(255,78,106,0.15); color: var(--coral); border: 1px solid rgba(255,78,106,0.4); }
+  .stock-pill.unknown { background: rgba(155,93,229,0.15); color: var(--purple); border: 1px solid rgba(155,93,229,0.4); }
+  .result-meta { display: flex; flex-wrap: wrap; gap: 0.5rem; align-items: center; }
+  .meta-tag { background: rgba(255,255,255,0.06); border-radius: 6px; font-size: 0.75rem; font-weight: 700; padding: 0.2rem 0.5rem; color: var(--muted); }
+  .meta-tag.price { color: var(--yellow); }
+  .result-notes { font-size: 0.83rem; color: var(--muted); line-height: 1.5; border-top: 1px solid rgba(255,255,255,0.05); padding-top: 0.5rem; }
+  .no-results { text-align: center; padding: 2.5rem 1rem; color: var(--muted); }
+  .no-results .icon { font-size: 3rem; margin-bottom: 0.5rem; }
+  .no-results p { font-size: 0.95rem; font-weight: 600; }
+  .summary-card { background: linear-gradient(135deg, rgba(155,93,229,0.15), rgba(255,107,157,0.1)); border: 1px solid rgba(155,93,229,0.25); border-radius: 16px; padding: 1.2rem 1.4rem; margin-top: 1.2rem; font-size: 0.9rem; color: var(--muted); line-height: 1.65; }
+  .summary-card strong { color: var(--text); }
+  .tips-card { background: rgba(0,229,160,0.06); border: 1px solid rgba(0,229,160,0.15); border-radius: 14px; padding: 1rem 1.4rem; margin-top: 1rem; font-size: 0.82rem; color: var(--muted); line-height: 1.6; }
+  .tips-card strong { color: var(--mint); display: block; margin-bottom: 0.3rem; }
+  .error-card { background: rgba(255,78,106,0.1); border: 1px solid rgba(255,78,106,0.25); border-radius: 14px; padding: 1rem 1.4rem; color: var(--coral); font-size: 0.9rem; font-weight: 600; display: none; }
+  .error-card.visible { display: block; }
+  footer { text-align: center; margin-top: 3rem; font-size: 0.75rem; color: rgba(155,137,196,0.4); font-weight: 600; }
+</style>
+</head>
+<body>
+<div class="blobs">
+  <div class="blob blob1"></div>
+  <div class="blob blob2"></div>
+  <div class="blob blob3"></div>
+</div>
+<div class="container">
+  <header>
+    <div class="squishy-logo">🟣 NeeDoh Hunter</div>
+    <div class="subtitle">AI Stock Scanner Agent</div>
+    <div class="badge">🔴 Live Search — Squish Shortage Crisis 2026 🇺🇸</div>
+  </header>
+  <div class="search-card">
+    <div class="form-row">
+      <div class="form-group">
+        <label class="form-label" for="location">📍 Your Location</label>
+        <input type="text" id="location" placeholder="e.g. Ruskin, FL" value="Ruskin, FL" />
+        <div class="input-hint">Town, city, or zip code area</div>
+      </div>
+      <div class="form-group">
+        <label class="form-label" for="radius">📏 Search Radius</label>
+        <select id="radius">
+          <option value="5 miles">5 miles</option>
+          <option value="10 miles" selected>10 miles</option>
+          <option value="20 miles">20 miles</option>
+          <option value="30 miles">30 miles</option>
+          <option value="US-wide online">US-wide online</option>
+        </select>
+      </div>
+    </div>
+    <label class="form-label">🟣 Which NeeDoh types?</label>
+    <div class="checklist" id="types">
+      <div class="chip active" data-value="Nice Cube">Nice Cube</div>
+      <div class="chip active" data-value="Nice Cube Swirl">Nice Cube Swirl</div>
+      <div class="chip" data-value="Groovy Glob">Groovy Glob</div>
+      <div class="chip" data-value="Gummy Bear">Gummy Bear</div>
+      <div class="chip" data-value="Gumdrop">Gumdrop</div>
+      <div class="chip" data-value="Dream Drops">Dream Drops</div>
+      <div class="chip" data-value="Jelly Squish">Jelly Squish</div>
+      <div class="chip" data-value="Mello Mallo">Mello Mallo</div>
+      <div class="chip" data-value="any NeeDoh">Any / All types</div>
+    </div>
+    <label class="form-label">🏪 Retailer priorities</label>
+    <div class="checklist" id="retailers">
+      <div class="chip active" data-value="Target">Target</div>
+      <div class="chip active" data-value="Walmart">Walmart</div>
+      <div class="chip active" data-value="Five Below">Five Below</div>
+      <div class="chip" data-value="Tuesday Morning">Tuesday Morning</div>
+      <div class="chip active" data-value="Amazon US">Amazon US</div>
+      <div class="chip" data-value="Learning Express">Learning Express</div>
+      <div class="chip" data-value="Barnes & Noble">Barnes & Noble</div>
+      <div class="chip" data-value="independent toy shops">Independent toy shops</div>
+    </div>
+    <div style="margin-bottom:1rem;">
+      <label class="form-label" for="apiKey">🔑 Anthropic API Key</label>
+      <input type="password" id="apiKey" placeholder="sk-ant-..." autocomplete="off" />
+      <div class="input-hint">Get a free key at <a href="https://console.anthropic.com" target="_blank" style="color:var(--pink);text-decoration:none;font-weight:700;">console.anthropic.com</a> — never stored or shared</div>
+    </div>
+    <button class="scan-btn" id="scanBtn" onclick="runScan()">🔍 Scan for Stock Now!</button>
+  </div>
+  <div class="status-bar" id="statusBar">
+    <div class="spinner"></div>
+    <div class="status-text" id="statusText">Initialising agent...</div>
+  </div>
+  <div class="error-card" id="errorCard"></div>
+  <div id="results">
+    <div class="results-header">
+      <div class="results-title">📦 Stock Report</div>
+      <div class="count-badge" id="countBadge">0 leads</div>
+    </div>
+    <div id="resultsList"></div>
+    <div class="summary-card" id="summaryCard" style="display:none"></div>
+    <div class="tips-card" id="tipsCard" style="display:none"></div>
+  </div>
+  <footer>NeeDoh Hunter • Powered by AI web scanning • Stock data updates with each search</footer>
+</div>
+<script>
+  document.querySelectorAll('.chip').forEach(chip => {
+    chip.addEventListener('click', () => chip.classList.toggle('active'));
+  });
+  function getSelected(groupId) {
+    return Array.from(document.querySelectorAll(`#${groupId} .chip.active`)).map(c => c.dataset.value);
+  }
+  function setStatus(msg) { document.getElementById('statusText').innerHTML = msg; }
+  function showStatus(show) { document.getElementById('statusBar').classList.toggle('visible', show); }
+  function showError(msg) {
+    const el = document.getElementById('errorCard');
+    el.textContent = msg;
+    el.classList.toggle('visible', !!msg);
+  }
+  function stockClass(status) {
+    if (!status) return 'unknown';
+    const s = status.toLowerCase();
+    if (s.includes('in stock') || s.includes('available') || s.includes('yes')) return 'in-stock';
+    if (s.includes('low') || s.includes('limited') || s.includes('few')) return 'low-stock';
+    if (s.includes('out') || s.includes('unavailable') || s.includes('sold out') || s.includes('no')) return 'out-of-stock';
+    return 'unknown';
+  }
+  function stockLabel(status) {
+    if (!status) return 'Check in store';
+    const s = status.toLowerCase();
+    if (s.includes('in stock') || s.includes('available') || s.includes('yes')) return '✅ In Stock';
+    if (s.includes('low') || s.includes('limited') || s.includes('few')) return '⚠️ Low Stock';
+    if (s.includes('out') || s.includes('unavailable') || s.includes('sold out') || s.includes('no')) return '❌ Out of Stock';
+    return '❓ ' + (status.length > 30 ? status.slice(0,30)+'…' : status);
+  }
+  async function runScan() {
+    const apiKey = document.getElementById('apiKey').value.trim();
+    if (!apiKey || !apiKey.startsWith('sk-ant-')) {
+      showError('⚠️ Please enter a valid Anthropic API key (starts with sk-ant-). Get one free at console.anthropic.com');
+      return;
+    }
+    const location = document.getElementById('location').value.trim();
+    if (!location) { showError('⚠️ Please enter your location first!'); return; }
+    showError('');
+    const radius = document.getElementById('radius').value;
+    const types = getSelected('types');
+    const retailers = getSelected('retailers');
+    if (types.length === 0) { showError('⚠️ Please select at least one NeeDoh type.'); return; }
+    document.getElementById('scanBtn').disabled = true;
+    document.getElementById('results').classList.remove('visible');
+    showStatus(true);
+    setStatus(`🔍 Agent scanning for <span>${types.join(', ')}</span> near <span>${location}</span>...`);
+    const typesStr = types.join(', ');
+    const retailersStr = retailers.length > 0 ? retailers.join(', ') : 'any US toy retailers';
+    const systemPrompt = `You are a stock-scanning agent helping US shoppers find NeeDoh toys. Your job is to search for current stock availability at physical shops and online retailers near a given location in the United States. You must return ONLY a valid JSON object — no markdown, no preamble, no backticks. The JSON must have this exact structure: {"results":[{"retailer":"store name","product":"NeeDoh product name","stock_status":"In Stock / Low Stock / Out of Stock / Unknown","price":"$X.XX or null","location_type":"Physical store near [location] / Online US / Both","notes":"Any useful detail: store address, click & collect, online link, restock info etc"}],"summary":"2-3 sentence plain English summary of the scan findings, best bets, and any tips for this location","shopping_tips":"2-3 practical tips specific to this location and product for finding NeeDoh right now in 2026"} Include 4-8 result entries. Be honest: if stock is genuinely uncertain say Unknown. Focus on actionable, location-specific findings. Mention specific store branches near the location where possible. Use USD pricing. Focus on US retailers like Target, Walmart, Five Below, Amazon US, and local independent toy stores.`;
+    const userPrompt = `Search for current US stock of NeeDoh toys: ${typesStr}. Location: ${location}, within ${radius}. Priority retailers: ${retailersStr}. Use your web search to check: 1. Stock availability at ${retailersStr} near ${location} 2. Online stock that ships to US addresses (Amazon.com, schylling.com, etc) 3. Any local independent toy shops or gift shops in the ${location} area known to stock NeeDoh or Schylling products 4. Check Target and Walmart store locator results near Ruskin FL / South Hillsborough County area. Return the JSON report based on what you find. Today is April 2026 — NeeDoh is very hard to find due to a viral surge in demand. Prices are typically $5–$15 USD.`;
+    try {
+      const response = await fetch("https://api.anthropic.com/v1/messages", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "x-api-key": apiKey,
+          "anthropic-version": "2023-06-01",
+          "anthropic-dangerous-direct-browser-calls": "true"
+        },
+        body: JSON.stringify({
+          model: "claude-sonnet-4-20250514",
+          max_tokens: 1000,
+          tools: [{ type: "web_search_20250305", name: "web_search" }],
+          system: systemPrompt,
+          messages: [{ role: "user", content: userPrompt }]
+        })
+      });
+      if (!response.ok) { const err = await response.text(); throw new Error(`API error ${response.status}: ${err}`); }
+      setStatus(`⚡ Processing results...`);
+      const data = await response.json();
+      const textBlocks = data.content.filter(b => b.type === 'text').map(b => b.text).join('\n');
+      let parsed;
+      try {
+        const clean = textBlocks.replace(/```json|```/g, '').trim();
+        const jsonMatch = clean.match(/\{[\s\S]*\}/);
+        if (!jsonMatch) throw new Error('No JSON found');
+        parsed = JSON.parse(jsonMatch[0]);
+      } catch(e) { throw new Error('Could not parse agent response. Please try again.'); }
+      showStatus(false);
+      renderResults(parsed, location, types);
+    } catch(err) {
+      showStatus(false);
+      showError('😕 Something went wrong: ' + err.message);
+      console.error(err);
+    } finally {
+      document.getElementById('scanBtn').disabled = false;
+    }
+  }
+  function renderResults(data, location, types) {
+    const results = data.results || [];
+    const summary = data.summary || '';
+    const tips = data.shopping_tips || '';
+    const list = document.getElementById('resultsList');
+    list.innerHTML = '';
+    document.getElementById('countBadge').textContent = results.length + ' leads';
+    if (results.length === 0) {
+      list.innerHTML = `<div class="no-results"><div class="icon">😔</div><p>No stock found near ${location}.<br>Try expanding your radius or checking back later.</p></div>`;
+    } else {
+      results.forEach((r, i) => {
+        const sClass = stockClass(r.stock_status);
+        const sLabel = stockLabel(r.stock_status);
+        const card = document.createElement('div');
+        card.className = 'result-card';
+        card.style.animationDelay = (i * 0.07) + 's';
+        card.innerHTML = `<div class="result-top"><div><div class="result-retailer">${r.retailer || 'Unknown retailer'}</div><div class="result-product">${r.product || 'NeeDoh'}</div></div><div class="stock-pill ${sClass}">${sLabel}</div></div><div class="result-meta">${r.price ? `<span class="meta-tag price">💰 ${r.price}</span>` : ''}${r.location_type ? `<span class="meta-tag">📍 ${r.location_type}</span>` : ''}</div>${r.notes ? `<div class="result-notes">${r.notes}</div>` : ''}`;
+        list.appendChild(card);
+      });
+    }
+    const sumCard = document.getElementById('summaryCard');
+    if (summary) { sumCard.innerHTML = `<strong>🤖 Agent Summary:</strong><br>${summary}`; sumCard.style.display = 'block'; } else { sumCard.style.display = 'none'; }
+    const tipsCard = document.getElementById('tipsCard');
+    if (tips) { tipsCard.innerHTML = `<strong>💡 Shopping Tips for ${location}</strong>${tips}`; tipsCard.style.display = 'block'; } else { tipsCard.style.display = 'none'; }
+    document.getElementById('results').classList.add('visible');
+    document.getElementById('results').scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+</script>
+</body>
+</html>
